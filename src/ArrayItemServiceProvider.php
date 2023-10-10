@@ -2,9 +2,9 @@
 
 namespace Overthink\ArrayItem;
 
+use Overthink\ArrayItem\Commands\ArrayItemCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Overthink\ArrayItem\Commands\ArrayItemCommand;
 
 class ArrayItemServiceProvider extends PackageServiceProvider
 {
