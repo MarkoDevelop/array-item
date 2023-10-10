@@ -66,6 +66,3 @@ it('can return remove attribute from array', function () {
 
     expect($item->remove('foo')->toArray())->toBe(['baz' => 'qux']);
 });
-
-
-
