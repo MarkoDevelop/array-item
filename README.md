@@ -91,6 +91,31 @@ $item->toJson();
 
 `ArrayItem` also implements `ArrayAccess` (`$item['key']`), `Illuminate\Contracts\Support\Arrayable`, `Jsonable`, `JsonSerializable`, and uses Laravel's `Conditionable` (`when()`/`unless()`) and `Macroable` traits.
 
+### `Conditionable`
+
+Conditionally apply logic while staying in the fluent chain:
+
+```php
+$item = ArrayItem::make(['name' => 'Widget', 'stock' => 0])
+    ->when($item->get('stock') === 0, fn (ArrayItem $item) => $item->set('status', 'out_of_stock'))
+    ->unless($item->has('sku'), fn (ArrayItem $item) => $item->set('sku', 'N/A'));
+```
+
+### `Macroable`
+
+Register your own methods on `ArrayItem` at boot time:
+
+```php
+use Overthink\ArrayItem\ArrayItem;
+
+ArrayItem::macro('isOutOfStock', function () {
+    /** @var ArrayItem $this */
+    return $this->get('stock') === 0;
+});
+
+$item->isOutOfStock(); // bool
+```
+
 Static configuration, shared across all instances:
 
 ```php
