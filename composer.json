@@ -1,12 +1,12 @@
 {
     "name": "overthink/array-item",
-    "description": "This is my package array-item",
+    "description": "A fluent, typed accessor for reading and manipulating array data in Laravel apps.",
     "keywords": [
         "overthink",
         "laravel",
         "array-item"
     ],
-    "homepage": "https://github.com/overthink/array-item",
+    "homepage": "https://github.com/MarkoDevelop/array-item",
     "license": "MIT",
     "authors": [
         {
@@ -18,9 +18,11 @@
     "require": {
         "php": "^8.1",
         "spatie/laravel-package-tools": "^1.14.0",
-        "illuminate/contracts": "^10.0"
+        "illuminate/contracts": "^10.48",
+        "illuminate/support": "^10.48"
     },
     "require-dev": {
+        "ext-intl": "*",
         "laravel/pint": "^1.0",
         "nunomaduro/collision": "^7.8",
         "nunomaduro/larastan": "^2.0.1",
@@ -33,10 +35,12 @@
         "phpstan/phpstan-phpunit": "^1.0",
         "spatie/laravel-ray": "^1.26"
     },
+    "suggest": {
+        "ext-intl": "Required to use Number::spell(), Number::ordinal(), Number::currency() and Number::percentage()."
+    },
     "autoload": {
         "psr-4": {
-            "Overthink\\ArrayItem\\": "src/",
-            "Overthink\\ArrayItem\\Database\\Factories\\": "database/factories/"
+            "Overthink\\ArrayItem\\": "src/"
         }
     },
     "autoload-dev": {
@@ -47,7 +51,6 @@
     },
     "scripts": {
         "post-autoload-dump": "@composer run prepare",
-        "clear": "@php vendor/bin/testbench package:purge-array-item --ansi",
         "prepare": "@php vendor/bin/testbench package:discover --ansi",
         "build": [
             "@composer run prepare",
@@ -74,10 +77,7 @@
         "laravel": {
             "providers": [
                 "Overthink\\ArrayItem\\ArrayItemServiceProvider"
-            ],
-            "aliases": {
-                "ArrayItem": "Overthink\\ArrayItem\\Facades\\ArrayItem"
-            }
+            ]
         }
     },
     "minimum-stability": "dev",
