@@ -29,12 +29,16 @@ class ArrayItem implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
 
     public static string $thousandsSeparator = '';
 
-    public function __construct(array $attributes = [])
+    public function __construct(array|ArrayItem $attributes = [])
     {
+        if ($attributes instanceof ArrayItem) {
+            $attributes = $attributes->toArray();
+        }
+
         $this->attributes = $this->default($attributes);
     }
 
-    public static function make(array $attributes = []): static
+    public static function make(array|ArrayItem $attributes = []): static
     {
         return new static($attributes);
     }
@@ -44,8 +48,19 @@ class ArrayItem implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
         return $attributes;
     }
 
-    public function set(string $key, mixed $value = null): static
+    public function set(string|callable $key, mixed $value = null, bool $merge = false): static
     {
+        if (is_callable($key) && ! is_string($key)) {
+
+            if ($merge) {
+                $this->attributes = array_merge($this->attributes, $key($this));
+            } else {
+                $this->attributes = $key($this);
+            }
+
+            return $this;
+        }
+
         $setValue = value($value, $this);
 
         Arr::set($this->attributes, $key, $setValue);
@@ -53,13 +68,29 @@ class ArrayItem implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
         return $this;
     }
 
-    public function get(string|callable $key, mixed $default = null)
+    public function merge(string|callable $key, mixed $value = null): static
+    {
+        return $this->set($key, $value, true);
+    }
+
+    public function get(string|callable $key, mixed $default = null): mixed
     {
         if (is_callable($key) && ! is_string($key)) {
             return $key($this);
         }
 
         return Arr::get($this->getAttributes(), $key, $default);
+    }
+
+    public function getOr(string|callable $key, mixed $default = null): mixed
+    {
+        $value = $this->get($key);
+
+        if (empty($value)) {
+            return value($default, $this, $key);
+        }
+
+        return $value;
     }
 
     public function has(string $key): bool
@@ -72,37 +103,98 @@ class ArrayItem implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
         return Str::of($this->get($key, $default));
     }
 
-    public function date(string|callable $key, string $default = null): Carbon
+    public function timestamp(string|callable $key, ?string $default = null): ?Carbon
     {
-        return Carbon::parse($this->get($key, $default));
+        $value = $this->get($key, $default);
+
+        if (is_null($value)) {
+            return null;
+        }
+
+        return Carbon::createFromTimestamp($value);
     }
 
-    public function dateFormat(string|callable $key, string $format = null, string $default = null): string
+    public function date(string|callable $key, ?string $default = null): ?Carbon
     {
-        return $this->date($key, $default)->format($format ?? static::$dateFormat);
+        $value = $this->get($key, $default);
+
+        if (is_null($value)) {
+            return null;
+        }
+
+        return $value instanceof Carbon ? $value : Carbon::parse($value);
     }
 
-    public function number(
+    public function dateFrom(string|callable $key, string $from, ?string $default = null): ?Carbon
+    {
+        $value = $this->get($key, $default);
+
+        if (is_null($value)) {
+            return null;
+        }
+
+        return Carbon::createFromFormat($from, $value);
+    }
+
+    public function timestampFormat(string|callable $key, ?string $format = null, ?string $default = null): ?string
+    {
+        $value = $this->timestamp($key, $default);
+
+        if (is_null($value)) {
+            return null;
+        }
+
+        return $value->format($format ?? static::$dateFormat);
+    }
+
+    public function json(string|callable $key, mixed $default = null): mixed
+    {
+        return json_decode($this->get($key, $default), true);
+    }
+
+    public function jsonItem(string|callable $key, mixed $default = null): ArrayItem
+    {
+        return ArrayItem::make($this->json($key, $default));
+    }
+
+    public function dateFormat(string|callable $key, ?string $format = null, ?string $default = null): ?string
+    {
+        $value = $this->date($key, $default);
+
+        if (is_null($value)) {
+            return null;
+        }
+
+        return $value->format($format ?? static::$dateFormat);
+    }
+
+    public function numberFormat(
         string|callable $key,
-        int $decimals = null,
-        string $decimalSeparator = null,
-        string $default = null
+        ?int $decimals = null,
+        ?string $decimalSeparator = null,
+        ?string $thousandsSeparator = null,
+        ?string $default = null
     ): string {
         return number_format(
             $this->float($key, $default),
             $decimals ?? static::$decimals,
             $decimalSeparator ?? static::$decimalSeparator,
-            static::$thousandsSeparator
+            $thousandsSeparator ?? static::$thousandsSeparator
         );
     }
 
-    public function float(string|callable $key, string $default = null): float
+    public function number(string|callable $key, ?string $default = null): Number
+    {
+        return Number::make($this->float($key, $default));
+    }
+
+    public function float(string|callable $key, ?string $default = null): float
     {
         $value = $this->get($key, $default);
 
-        return is_string($value)
-            ? Str::of($value)->replace('.', '')->replace(',', '.')->toFloat()
-            : floatval($value);
+        return floatval($value) == $value
+            ? floatval($value)
+            : Str::of($value)->replace('.', '')->replace(',', '.')->toFloat();
     }
 
     public function collect(string|callable $key, mixed $default = []): Collection
@@ -131,9 +223,35 @@ class ArrayItem implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
         return $this;
     }
 
+    public function only(string|array|Collection $item): static
+    {
+        if ($item instanceof Collection) {
+            $item = $item->toArray();
+        } elseif (is_string($item)) {
+            $item = Arr::wrap($item);
+        }
+
+        $attributes = [];
+        foreach ($item as $index => $key) {
+            $value = is_numeric($index) ? $key : $index;
+            if (Arr::has($this->attributes, $value)) {
+                $attributes[$key] = Arr::get($this->attributes, $value);
+            }
+        }
+
+        $this->attributes = $attributes;
+
+        return $this;
+    }
+
     public function toArray(): array
     {
         return $this->getAttributes();
+    }
+
+    public function toCollection(): Collection
+    {
+        return collect($this->getAttributes());
     }
 
     public function jsonSerialize(): array
