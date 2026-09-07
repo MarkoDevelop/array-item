@@ -7,6 +7,13 @@
 
 A fluent, typed accessor for reading and manipulating array data in Laravel apps. Wrap any array (API response, JSON column, config, ...) in an `ArrayItem` to get dot-notation access, typed getters (string, float, date, number, collection, JSON), and a small set of array manipulation helpers, without giving up `ArrayAccess`.
 
+## Requirements
+
+- PHP `^8.3`
+- Laravel `^11.0 || ^12.0 || ^13.0`
+
+Need Laravel 10 / PHP 8.2? Use `^1.0` instead — it won't get new features, but it's still there.
+
 ## Installation
 
 You can install the package via composer:

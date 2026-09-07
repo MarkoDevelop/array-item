@@ -83,3 +83,16 @@ it('timestampFormat returns null when the value is null', function () {
 
     expect($item->timestampFormat('missing'))->toBeNull();
 });
+
+it('timestamp renders in the configured default timezone, not UTC', function () {
+    $original = date_default_timezone_get();
+    date_default_timezone_set('Europe/Ljubljana');
+
+    try {
+        $item = ArrayItem::make(['foo' => 0]);
+
+        expect($item->timestamp('foo')->format('Y-m-d H:i P'))->toBe('1970-01-01 01:00 +01:00');
+    } finally {
+        date_default_timezone_set($original);
+    }
+});
