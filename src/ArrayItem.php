@@ -111,7 +111,7 @@ class ArrayItem implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
             return null;
         }
 
-        return Carbon::createFromTimestamp($value);
+        return Carbon::createFromTimestamp($value, date_default_timezone_get());
     }
 
     public function date(string|callable $key, ?string $default = null): ?Carbon
